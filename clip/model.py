@@ -401,11 +401,16 @@ class EMGCLIP(nn.Module):
         self.class_projection1 = nn.Linear(embed_dim, 10)
         self.class_projection2 = nn.Linear(embed_dim, 10)
 
+        self.softmax = nn.Softmax(dim=1)
+        self.weight = nn.Parameter(torch.empty(1, 2))
+
         self.initialize_parameters()
 
     def initialize_parameters(self):
         nn.init.normal_(self.token_embedding.weight, std=0.02) # 完成初始化，随机赋值
         nn.init.normal_(self.positional_embedding, std=0.01)
+        nn.init.normal_(self.voting_weight1, std=0.01)
+        nn.init.normal_(self.voting_weight2, std=0.01)
 
         if isinstance(self.visual2, (EMGModifiedResNet1D, EMGModifiedResNet2D)):
             if self.visual2.attnpool is not None:
@@ -482,3 +487,15 @@ class EMGCLIP(nn.Module):
 
         # shape = [global_batch_size, global_batch_size]
         return logits_per_image, logits_per_text
+    
+    def forward_moe(self, image):
+        features1, features2 = self.encode_image(image) # shape(B,8,400,1)
+        evidence1 = self.softplus(self.class_projection1(self.dropout(features1)))
+        evidence2 = self.softplus(self.class_projection2(self.dropout(features2)))
+        
+        prediction1 = self.softmax(evidence1)
+        prediction2 = self.softmax(evidence2)
+        weight = self.softmax(self.weight)
+
+        prediction = prediction1 * weight[0][0] + prediction2 * weight[0][1]
+        return prediction

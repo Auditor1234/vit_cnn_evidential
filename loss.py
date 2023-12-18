@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+import torch.nn as nn
 
 # loss function
 def KL(alpha, c): # shape(B,c)
@@ -88,3 +89,9 @@ def combine_loss(evidences, y, classes=10):
     loss += ce_loss(y, alpha_a, classes, 1, 1)
     loss = torch.mean(loss)
     return evidence_a, loss
+
+
+def cross_entropy(predictions, y, classes=10):
+    B = y.shape[0]
+    log_res = torch.log(predictions[torch.arange(B), y])
+    return torch.sum(-log_res) / B

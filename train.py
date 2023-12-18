@@ -9,7 +9,7 @@ from utils import template, prompts, save_results
 def train_one_epoch_signal_text(model, epoch, epochs, device, train_loader, loss_func, optimizer, scheduler, classification, model_dim=2):
     model.train() 
     total_loss = 0.0
-    loop = tqdm(train_loader, desc='Train', ncols=150)
+    loop = tqdm(train_loader, desc='Train', ncols=120)
     for _, (window_data, window_labels) in enumerate(loop): # shape(B,400,8)
         if model_dim == 1:
             window_data = window_data.transpose(1, 2).unsqueeze(-1) # shape(B,8,400,1)
