@@ -93,5 +93,6 @@ def combine_loss(evidences, y, classes=10):
 
 def cross_entropy(predictions, y, classes=10):
     B = y.shape[0]
-    log_res = torch.log(predictions[torch.arange(B), y])
+    norm_predictions = torch.softmax(predictions, dim=1)
+    log_res = torch.log(norm_predictions[torch.arange(B), y])
     return torch.sum(-log_res) / B
