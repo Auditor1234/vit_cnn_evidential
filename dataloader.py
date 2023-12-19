@@ -21,6 +21,24 @@ class SignalWindow(Dataset):
     def __getitem__(self, idx):
         return self.window_data[idx, :, :8], self.window_label[idx]
 
+def window_to_h5py(emg, label, filename, window_size=400, window_overlap=0):
+    window_data = []
+    window_label = []
+    for i in range(len(label)):
+        emg_type = np.array(emg[i])
+        window_count = 0
+        print('{} emg points found in type {} emg signal.'.format(len(emg_type), label[i]))
+        for j in range(0, len(emg_type) - window_size, window_size - window_overlap):
+            window_data.append(emg_type[j : j + window_size])
+            window_label.append(label[i])
+            window_count += 1
+        print('{} window data found in type {} emg signal.'.format(window_count, label[i]))
+    
+    file = h5py.File(filename,'w')  
+    file.create_dataset('windowData', data = np.stack(window_data, axis=0))
+    file.create_dataset('windowLabel', data = np.array(window_label))
+    file.close()
+
 
 def h5py_to_window(filename):
     file = h5py.File(filename, 'r')
@@ -30,8 +48,7 @@ def h5py_to_window(filename):
     return emg, label
 
 
-def split_window_ration(emg, label, ratio, window_overlap=200):
-    window_size = 400
+def split_window_ration(emg, label, ratio, window_size=400, window_overlap=200):
     denominator = sum(ratio)
 
     train_emg, train_label, val_emg, val_label, eval_emg, eval_label = [], [], [], [], [], []
@@ -101,3 +118,13 @@ def load_emg_label_from_file(filename, class_type=10):
     print('label = \n', label)
 
     return emg, label
+
+
+if __name__ == '__main__':
+    filename = 'D:/Download/Datasets/Ninapro/DB2/S1/S1_E1_A1.mat'
+    h5_filename = 'dataset/window_400_300.h5'
+    emg, label = load_emg_label_from_file(filename)
+    # window_to_h5py(emg, label, h5_filename, window_overlap=300)
+    # emg, label = h5py_to_window(h5_filename)
+    # print(emg.shape)
+    # print(label.shape)

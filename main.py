@@ -7,7 +7,7 @@ from dataloader import SignalWindow, h5py_to_window, split_window_ration, load_e
 from torch.utils.data import DataLoader
 from train import train_one_epoch_signal_text, validate_signal_text, evaluate_signal_text
 from utils import setup_seed, save_model_weight
-from loss import combine_loss
+from loss import combine_loss, cross_entropy
 
 import torch.nn as nn
 import numpy as np
@@ -32,6 +32,7 @@ def main(args):
     weight_path = 'res/best.pt'
     best_precision, current_precision = 0, 0
 
+    subject = 1 # 某个人的数据
     model_dim = 2 # 数据维数 1为(B,8,400,1)，2为(B,1,400,8)
     classification = True # 是否是分类任务
     model = clip.EMGbuild_model(classification=classification, model_dim=model_dim)
@@ -39,7 +40,7 @@ def main(args):
     # optimizer = Adam(model.parameters(), lr=args.lr, betas=(0.9, 0.98), weight_decay=0.2)
     optimizer = Adam(model.parameters(), lr=args.lr, eps=1e-3)
     scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.99)
-    loss_func = combine_loss
+    loss_func = cross_entropy
 
     emg, label = h5py_to_window(filename)
     data_len = len(label)
@@ -49,8 +50,6 @@ def main(args):
 
     train_len = int(data_len * 0.8)
     val_len = int(data_len * 0.1)
-    print('{} window for training, {} window for validation and {} data for test.'.format \
-          (train_len, val_len, data_len - train_len - val_len))
 
     # 数据按照8:1:1分为训练集、验证集和测试集
     train_emg = emg[: train_len]
@@ -60,10 +59,11 @@ def main(args):
     eval_emg = emg[train_len + val_len :]
     eval_label = label[train_len + val_len :]
 
-    # data_filename = 'D:/Download/Datasets/Ninapro/DB2/S1/S1_E1_A1.mat'
+    
+    # data_filename = 'D:/Download/Datasets/Ninapro/DB2/DB2_s%s/S%s_E1_A1.mat' % (subject, subject)
     # emg, label = load_emg_label_from_file(data_filename)
     # # [(4,1,1), 200] [(2,1,1), 300]
-    # train_emg, train_label, val_emg, val_label, eval_emg, eval_label = split_window_ration(emg, label, (4,1,1), window_overlap=200)
+    # train_emg, train_label, val_emg, val_label, eval_emg, eval_label = split_window_ration(emg, label, (8,1,1), window_size=400, window_overlap=0)
     # train_index = np.random.permutation(len(train_emg))
     # val_index = np.random.permutation(len(val_emg))
     # eval_index = np.random.permutation(len(eval_emg))
@@ -71,6 +71,8 @@ def main(args):
     # val_emg, val_label = val_emg[val_index] * 20000, val_label[val_index]
     # eval_emg, eval_label = eval_emg[eval_index] * 20000, eval_label[eval_index]
 
+    print('{} window for training, {} window for validation and {} data for test.'.format \
+          (len(train_label), len(val_label), len(eval_label)))
 
     train_loader = DataLoader(
                     SignalWindow(train_emg, train_label),

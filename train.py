@@ -20,9 +20,9 @@ def train_one_epoch_signal_text(model, epoch, epochs, device, train_loader, loss
         text = clip.tokenize([template + prompts[mov_idx + 12] for mov_idx in window_labels]).to(device)
         
         if classification:
-            evidences = model(window_data, text)
+            evidences = model.forward_moe(window_data)
             labels = window_labels.to(device).type(torch.long) - 1
-            evidence_a, loss = loss_func(evidences, labels, classes=10)
+            loss = loss_func(evidences, labels, classes=10)
         else:
             logits_per_image, logits_per_text = model(window_data, text)
             labels = torch.LongTensor(range(len(window_labels))).to(device)
@@ -58,9 +58,9 @@ def validate_signal_text(model, device, val_loader, loss_func, classification, m
         text = clip.tokenize([template + prompts[mov_idx + 12] for mov_idx in window_labels]).to(device)
                 
         if classification:
-            evidences = model(window_data, text)
+            evidences = model.forward_moe(window_data)
             labels = window_labels.to(device).type(torch.long) - 1
-            evidence_a, loss = loss_func(evidences, labels, classes=10)
+            loss = loss_func(evidences, labels, classes=10)
         else:
             logits_per_image, logits_per_text = model(window_data, text)
             labels = torch.LongTensor(range(len(window_labels))).to(device)
@@ -69,7 +69,7 @@ def validate_signal_text(model, device, val_loader, loss_func, classification, m
             loss = (loss_I + loss_T) / 2
         total_loss += loss
 
-        predict_idx = evidence_a.argmax(dim=-1)
+        predict_idx = evidences.argmax(dim=-1)
         correct_nums += torch.sum(predict_idx == labels)
         total_nums += len(predict_idx)
 
@@ -99,9 +99,9 @@ def evaluate_signal_text(model, device, eval_loader, loss_func, classification, 
         text = clip.tokenize([template + prompts[mov_idx + 12] for mov_idx in window_labels]).to(device)
                 
         if classification:
-            evidences = model(window_data, text)
+            evidences = model.forward_moe(window_data)
             labels = window_labels.to(device).type(torch.long) - 1
-            evidence_a, loss = loss_func(evidences, labels, classes=10)
+            loss = loss_func(evidences, labels, classes=10)
         else:
             logits_per_image, logits_per_text = model(window_data, text)
             labels = torch.LongTensor(range(len(window_labels))).to(device)
@@ -110,7 +110,7 @@ def evaluate_signal_text(model, device, eval_loader, loss_func, classification, 
             loss = (loss_I + loss_T) / 2
         total_loss += loss
 
-        predict_idx = evidence_a.argmax(dim=-1)
+        predict_idx = evidences.argmax(dim=-1)
         correct_nums += torch.sum(predict_idx == labels)
         total_nums += len(predict_idx)
 

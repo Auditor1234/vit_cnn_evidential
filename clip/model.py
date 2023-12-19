@@ -409,8 +409,7 @@ class EMGCLIP(nn.Module):
     def initialize_parameters(self):
         nn.init.normal_(self.token_embedding.weight, std=0.02) # 完成初始化，随机赋值
         nn.init.normal_(self.positional_embedding, std=0.01)
-        nn.init.normal_(self.voting_weight1, std=0.01)
-        nn.init.normal_(self.voting_weight2, std=0.01)
+        nn.init.normal_(self.weight, std=0.01)
 
         if isinstance(self.visual2, (EMGModifiedResNet1D, EMGModifiedResNet2D)):
             if self.visual2.attnpool is not None:
